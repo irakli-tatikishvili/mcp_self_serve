@@ -1,0 +1,14 @@
+# Repo root contains mcp-flow-sim (Vite app). Netlify must install & build there.
+[build]
+  base = "mcp-flow-sim"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA: all routes serve index.html (safe for tab-only UI; needed if you add routes later)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
