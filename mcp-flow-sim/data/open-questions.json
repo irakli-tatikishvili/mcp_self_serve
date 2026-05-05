@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-05T20:15:35.809Z",
+  "rows": [
+    {
+      "id": "q-daily-limits-cc-wall",
+      "question": "Can we have daily limits? Mainly for CC wall users",
+      "answer": "",
+      "createdAt": "2026-05-05T21:30:00.000Z"
+    },
+    {
+      "id": "q-comm-existing-users-3v4",
+      "question": "Communication to existing users — 3.0 vs 4.0",
+      "answer": "",
+      "createdAt": "2026-05-05T21:30:00.000Z"
+    },
+    {
+      "id": "q-enterprise-selfserve-parity",
+      "question": "Enterprise vs self-serve MCP parity?",
+      "answer": "",
+      "createdAt": "2026-05-05T21:30:00.000Z"
+    },
+    {
+      "id": "q-llm-quota-limit-reach",
+      "question": "LLM quota errors limit reach - How do we manage?",
+      "answer": "",
+      "createdAt": "2026-05-05T21:30:00.000Z"
+    }
+  ]
+}
