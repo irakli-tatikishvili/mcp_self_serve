@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MCP in Self-Serve — Flow Explainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --bg-warm: #ebe4d8;
+      --ink: #14201f;
+      --ink-soft: #3d4a49;
+      --line: rgba(20, 32, 31, 0.12);
+      --accent: #d45a2c;
+      --accent-dim: rgba(212, 90, 44, 0.12);
+      --teal: #0d5c63;
+      --teal-soft: rgba(13, 92, 99, 0.08);
+      --card: #ffffff;
+      --shadow: 0 18px 50px rgba(20, 32, 31, 0.09);
+      --radius: 14px;
+      --font-display: "Outfit", system-ui, sans-serif;
+      --font-body: "Newsreader", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 800px at 12% -10%, rgba(13, 92, 99, 0.09), transparent 55%),
+        radial-gradient(900px 600px at 88% 0%, rgba(212, 90, 44, 0.08), transparent 50%),
+        var(--bg);
+    }
+
+    .shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.75rem, 4vw, 2.35rem);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin: 0 0 0.5rem;
+    }
+    header p {
+      margin: 0;
+      max-width: 62ch;
+      color: var(--ink-soft);
+      font-size: 1.08rem;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.35rem;
+      background: var(--bg-warm);
+      border-radius: calc(var(--radius) + 6px);
+      border: 1px solid var(--line);
+    }
+    .tabs button {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .tabs button:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.55);
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--card);
+      color: var(--teal);
+      box-shadow: 0 6px 20px rgba(20, 32, 31, 0.08);
+    }
+    .tabs button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .panel {
+      display: none;
+      animation: rise 0.45s ease both;
+    }
+    .panel.active { display: block; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      margin: 0 0 0.75rem;
+      color: var(--teal);
+    }
+    .card h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin: 1.25rem 0 0.5rem;
+    }
+    .card p, .card li { color: var(--ink-soft); }
+    .card ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    .card li { margin: 0.35rem 0; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: var(--teal-soft);
+      color: var(--teal);
+      margin-bottom: 0.75rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 0;
+      margin: 1rem 0;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px dashed var(--line);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 2rem;
+      height: 2rem;
+      display: grid;
+      place-items: center;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .step-body h4 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      margin: 0 0 0.35rem;
+      font-weight: 600;
+    }
+    .step-body p {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 800px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    .figure {
+      margin: 1rem 0 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--bg-warm);
+    }
+    .figure img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .figure figcaption {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      padding: 0.65rem 0.85rem;
+      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 0.75rem 0 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
+
+    .team-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 720px) {
+      .team-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .team-card {
+      background: linear-gradient(145deg, #fff, #faf8f3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      box-shadow: var(--shadow);
+    }
+    .team-card strong {
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      color: var(--teal);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      padding: 0.85rem 1rem;
+      margin: 1rem 0 0;
+      background: var(--accent-dim);
+      border-radius: 0 10px 10px 0;
+      font-size: 0.98rem;
+    }
+
+    .muted { color: var(--ink-soft); font-size: 0.95rem; }
+
+    .prd-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 840px) {
+      .prd-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .prd-tile {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      padding: 1.15rem 1.2rem;
+      box-shadow: 0 8px 24px rgba(20, 32, 31, 0.05);
+    }
+    .prd-tile h3 {
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      margin: 0 0 0.5rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .prd-tile p { margin: 0; font-size: 0.95rem; }
+
+    footer {
+      margin-top: 2.5rem;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      text-align: center;
+      font-family: var(--font-display);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>MCP (API key) in self-serve packages</h1>
+      <p>
+        Interactive map of user journeys, PRD pillars, cross-team work, and open decisions.
+        Use the tabs below to walk through how acquisition, activation, monitoring, and monetization connect.
+      </p>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Explainer sections">
+      <button role="tab" id="tab-a" aria-selected="true" aria-controls="panel-a">Regular user flow</button>
+      <button role="tab" id="tab-b" aria-selected="false" aria-controls="panel-b">LLM-origin flow</button>
+      <button role="tab" id="tab-c" aria-selected="false" aria-controls="panel-c">PRD main items</button>
+      <button role="tab" id="tab-d" aria-selected="false" aria-controls="panel-d">Team action items</button>
+      <button role="tab" id="tab-e" aria-selected="false" aria-controls="panel-e">Open questions</button>
+    </div>
+
+    <!-- Tab 1: Regular user -->
+    <section id="panel-a" class="panel active" role="tabpanel" aria-labelledby="tab-a">
+      <div class="card">
+        <span class="badge">Starting in-product</span>
+        <h2>Journey: user does not arrive from an LLM</h2>
+        <p class="muted">
+          Typical self-serve path: evaluate plans on the site, subscribe, then discover API &amp; MCP through Account Settings.
+          MCP access is included on paid tiers; credits (1 coin system) sit alongside plan limits and add-ons.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Step-by-step flow</h2>
+        <div class="flow">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Pricing &amp; plan selection</h4>
+              <p>User compares packages ($199 / $399 / $649 in current self-serve). <strong>MCP is bundled on paid plans</strong> with base credits; Free remains the upsell surface (no MCP).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Signup / purchase &amp; account creation</h4>
+              <p>After checkout, the account is provisioned with the entitlement profile for the tier (historical depth, Excel credits today, and <strong>shared programmatic credits</strong> for REST, Batch, Data Studio, MCP).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Activation — REST API &amp; first key</h4>
+              <p><strong>Account Settings → Data Tools → REST API.</strong> User generates an API key; system applies default allocation from the monthly pool. Success state: key visible, usage widgets populated.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>Connect MCP (optional but encouraged)</h4>
+              <p>Same API key powers MCP clients (e.g. Claude). In-product messaging: “Use Similarweb inside your AI assistant.”</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h4>Monitor &amp; allocate</h4>
+              <p><strong>Data Credits Management</strong> for pooled balance; REST API page for per-tool usage, users vs endpoints, keys, and per-user caps. <strong>Allocate</strong> must satisfy allocation ≥ used credits (per existing rules).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <h4>Expansion</h4>
+              <p>Triggers at ~80% usage (warn) and 100% (block / soft block). CTAs: <strong>buy credit packs</strong>, upgrade tier, or redistribute allocations. Drives NT → T when burn is sustained.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <figure class="figure">
+          <img src="assets/pricing.png" alt="Self-serve pricing columns showing tiers from free through high-tier paid plans" width="600" height="400" loading="lazy" />
+          <figcaption>Reference: plan comparison — MCP callouts would appear on paid columns.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="assets/rest-api.png" alt="REST API settings with monthly credits bar, usage chart, and API keys table" width="600" height="400" loading="lazy" />
+          <figcaption>Activation &amp; monitoring: REST API dashboard after purchase.</figcaption>
+        </figure>
+      </div>
+      <figure class="figure">
+        <img src="assets/data-credits.png" alt="Data credits management with tool cards and allocate actions" width="1100" height="500" loading="lazy" />
+        <figcaption>Pooled credits across tools — entry point for allocation &amp; expansion.</figcaption>
+      </figure>
+    </section>
+
+    <!-- Tab 2: LLM user -->
+    <section id="panel-b" class="panel" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <div class="card">
+        <span class="badge">Acquisition-first</span>
+        <h2>Journey: user arrives from an LLM (Claude, ChatGPT, …)</h2>
+        <p class="muted">
+          The MCP connector is the top-of-funnel. The hypothesis: LLM-driven discovery improves CvR → new trials / NTs,
+          then retention via embedded workflows and TLV through ongoing credit consumption.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Step-by-step flow</h2>
+        <div class="flow">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Entry from LLM</h4>
+              <p>User selects “Connect Similarweb” / adds Similarweb MCP in the host app. Host redirects to the <strong>MCP authorization</strong> experience.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Auth page — API key or “get key”</h4>
+              <p>User pastes an existing API key or follows <strong>Existing client → get key</strong>. If net-new, <strong>signup with MCP-compatible plan pre-selected</strong> and copy: “Use Similarweb inside Claude.”</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Package selection &amp; payment (if needed)</h4>
+              <p>Non-users complete purchase or start trial (see Open Questions for trial limits). Goal: <strong>fast first successful MCP call</strong>, not heavy usage on no-CC trial.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>Redirect back to LLM</h4>
+              <p>OAuth-style return to the host with a working key connection. User can immediately run prompts that invoke Similarweb tools.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h4>Ongoing usage &amp; monetization</h4>
+              <p>Same dashboards as in-product users. Errors from the LLM when credits are exhausted become <strong>natural upsell surfaces</strong> (buy packs, upgrade, allocate).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <figure class="figure" style="max-width: 720px;">
+        <img src="assets/mcp-auth.png" alt="Similarweb MCP authorization page requesting API key" width="720" height="480" loading="lazy" />
+        <figcaption>Bridge experience: LLM → Similarweb — aligns with acquisition flow in the PRD.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <strong style="font-family: var(--font-display); color: var(--teal);">Key UX requirements</strong><br />
+        Frictionless signup, pre-selected MCP-ready plans, and reinforcing value: programmatic access + AI-native workflow in one motion.
+      </div>
+    </section>
+
+    <!-- Tab 3: PRD -->
+    <section id="panel-c" class="panel" role="tabpanel" aria-labelledby="tab-c" hidden>
+      <div class="card">
+        <h2>North star (from PRD)</h2>
+        <p>
+          Adding MCP (API key) to packages plus <strong>credit add-ons</strong> should raise CvR → NT via LLM funnels,
+          improve NT retention &amp; TLV through habitual API usage, and unlock NT → T expansion when limits bite.
+        </p>
+      </div>
+
+      <div class="prd-grid">
+        <div class="prd-tile">
+          <h3>Goals &amp; metrics</h3>
+          <p>% NTs via MCP funnel; API key generation rate; credits / NT; % hitting limits; add-on attach; retention of API vs non-API cohorts.</p>
+        </div>
+        <div class="prd-tile">
+          <h3>Core scope</h3>
+          <p>Generate keys, MCP auth, programmatic data access, monitor usage/credits/endpoints, manage keys &amp; allocations.</p>
+        </div>
+        <div class="prd-tile">
+          <h3>Packaging rules</h3>
+          <p>MCP on all paid tiers; limited on no-CC trial; fuller on CC trial; monetize with shared <strong>1 coin</strong> credits + packs.</p>
+        </div>
+        <div class="prd-tile">
+          <h3>Critical flows</h3>
+          <p>Acquisition (LLM), activation (first key), monitoring (REST + credits pages), allocation, exhaustion → purchase, NT → T signals.</p>
+        </div>
+        <div class="prd-tile">
+          <h3>Monetization</h3>
+          <p>Subscription base + credit packs (primary growth); future endpoint / rate-limit SKUs.</p>
+        </div>
+        <div class="prd-tile">
+          <h3>Risks</h3>
+          <p>API abuse → rate limits &amp; anomaly detection. Credit confusion → education &amp; clear UI. Low activation → onboarding &amp; first-call nudges.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 1.25rem;">
+        <h2>Proposed packaging snapshot</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>MCP</th>
+              <th>Credits</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Free</td><td>No</td><td>0</td><td>Upsell entry; no programmatic/MCP.</td></tr>
+            <tr><td>Trial (no CC)</td><td>Yes, limited</td><td>Low</td><td>1 key, drive activation not heavy burn.</td></tr>
+            <tr><td>Trial (CC)</td><td>Yes</td><td>Medium</td><td>Full MCP experience; build dependency.</td></tr>
+            <tr><td>Paid Basic / $199+</td><td>Yes</td><td>Base+</td><td>Core ICP; MCP listed as included benefit.</td></tr>
+            <tr><td>Mid / High tier</td><td>Yes</td><td>Higher</td><td>Agencies &amp; power users; room to grow into add-ons.</td></tr>
+            <tr><td>Enterprise</td><td>Yes</td><td>Custom</td><td>Negotiated pools &amp; guardrails.</td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top: 0.75rem;">Add-ons: credit packs (primary lever), future endpoint bundles.</p>
+      </div>
+    </section>
+
+    <!-- Tab 4: Teams -->
+    <section id="panel-d" class="panel" role="tabpanel" aria-labelledby="tab-d" hidden>
+      <div class="card">
+        <h2>Action items by team</h2>
+        <p class="muted">Synthesized from your steering notes and PRD dependencies — use as a checklist for execution.</p>
+        <div class="team-grid" style="margin-top: 1rem;">
+          <div class="team-card">
+            <strong>Pricing &amp; packaging</strong>
+            <ul>
+              <li>Define MCP positioning per tier (included vs gated).</li>
+              <li>Size base credit pools and map to current $199 / $399 / $649 SKUs.</li>
+              <li>Specify add-on credit SKUs and commercial rules (overage vs pre-buy).</li>
+            </ul>
+          </div>
+          <div class="team-card">
+            <strong>Cross-team (platform / data credits)</strong>
+            <ul>
+              <li>Unify metering under the <strong>single “1 coin”</strong> currency across REST, Batch, Data Studio, MCP.</li>
+              <li>Expose the right settings deep-links from trials, checkout, and LLM auth.</li>
+              <li>Ensure base plans include MCP + clear upgrade path for more coins.</li>
+            </ul>
+          </div>
+          <div class="team-card">
+            <strong>Monetization</strong>
+            <ul>
+              <li>Ship paywalls &amp; upgrade flows on exhaustion (80% / 100%).</li>
+              <li>Billing for credit packs; reconcile with subscription invoices.</li>
+              <li>In-product + email triggers when limits approach.</li>
+            </ul>
+          </div>
+          <div class="team-card">
+            <strong>Expansion</strong>
+            <ul>
+              <li>Build add-on purchase funnels and post-purchase allocation UX.</li>
+              <li>LLM-side messaging when tools error on credits (recoverable CTAs).</li>
+              <li>Lifecycle campaigns for high-burn NT cohorts (NT → T).</li>
+            </ul>
+          </div>
+          <div class="team-card">
+            <strong>Security</strong>
+            <ul>
+              <li>MCP abuse patterns: rate limits, anomaly detection, revocation UX.</li>
+              <li>Harden LLM OAuth / redirect trust boundaries; key rotation story.</li>
+              <li>Audit logging for MCP vs REST consumption parity.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Open questions -->
+    <section id="panel-e" class="panel" role="tabpanel" aria-labelledby="tab-e" hidden>
+      <div class="card">
+        <h2>Open questions — trial &amp; paid MCP depth</h2>
+        <p class="muted">
+          These decisions change both the LLM funnel promise and the metering logic. Resolve before broad marketing of “Similarweb MCP.”
+        </p>
+        <table style="margin-top: 1rem;">
+          <thead>
+            <tr>
+              <th>Cohort</th>
+              <th>What do we offer MCP-wise?</th>
+              <th>Open decisions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>No-CC trial</strong></td>
+              <td>Limited MCP (low credits, single key) — activation-first.</td>
+              <td>Exact credit budget; which endpoints/tools eligible; duration resets.</td>
+            </tr>
+            <tr>
+              <td><strong>CC trial</strong></td>
+              <td>Full MCP experience with medium shared credits.</td>
+              <td>Whether CC trial matches a specific paid tier cap; overage behavior before conversion.</td>
+            </tr>
+            <tr>
+              <td><strong>Paid (all tiers)</strong></td>
+              <td>MCP included; scaling via plan credits + add-on coins.</td>
+              <td>Per-tier included coins vs Excel legacy credits messaging; coexistence period.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout" style="margin-top: 1.25rem;">
+          Additional questions to close: Enterprise vs self-serve parity on MCP SKUs; agency / multi-seat allocation defaults;
+          whether LLM errors should deep-link to buy flow or self-serve allocation first.
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Internal explainer — MCP self-serve PRD. Open <code style="background: var(--bg-warm); padding: 0.15rem 0.35rem; border-radius: 4px;">index.html</code> locally in a browser.
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+      function selectTab(tab) {
+        tabs.forEach((t) => {
+          const on = t === tab;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          t.tabIndex = on ? 0 : -1;
+        });
+        panels.forEach((p) => {
+          const on = p.id === tab.getAttribute('aria-controls');
+          p.classList.toggle('active', on);
+          p.hidden = !on;
+        });
+        tab.focus();
+      }
+
+      tabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => selectTab(tab));
+        tab.addEventListener('keydown', (e) => {
+          let next = null;
+          if (e.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+          if (e.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+          if (e.key === 'Home') next = tabs[0];
+          if (e.key === 'End') next = tabs[tabs.length - 1];
+          if (next) {
+            e.preventDefault();
+            selectTab(next);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
