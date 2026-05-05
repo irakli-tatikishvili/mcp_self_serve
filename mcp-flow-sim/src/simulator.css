@@ -963,6 +963,16 @@
   color: var(--teal);
 }
 
+.qs-loading {
+  margin: 0;
+}
+
+.qs-file-meta {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.78rem;
+  color: var(--muted-2);
+}
+
 .qs-toolbar {
   display: flex;
   flex-direction: column;

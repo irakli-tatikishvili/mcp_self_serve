@@ -1,67 +1,109 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  OPEN_QUESTIONS_API,
+  defaultSeedRows,
+  isQAItem,
+  type QAItem,
+  rowsFromOpenQuestionsFile,
+} from './openQuestionsStorage'
 
 const STORAGE_KEY = 'mcp-flow-sim-open-questions-v1'
+const SAVE_DEBOUNCE_MS = 450
 
-export type QAItem = {
-  id: string
-  question: string
-  answer: string
-  createdAt: string
-}
-
-function seedRows(): QAItem[] {
-  const now = new Date().toISOString()
-  const questions = [
-    'No-CC trial: MCP scope, coin budget, eligible endpoints, reset cadence?',
-    'CC trial: parity with which paid tier cap? Overage before conversion?',
-    'Paid: coexistence / messaging for legacy Excel credits vs coins?',
-    'Enterprise vs self-serve MCP parity?',
-    'Agency defaults for pooled allocations?',
-    'LLM quota errors: deep-link to buy vs re-allocate first?',
-  ]
-  return questions.map((question, i) => ({
-    id: `seed-${i}-${now.slice(0, 10)}`,
-    question,
-    answer: '',
-    createdAt: now,
-  }))
-}
-
-function loadInitial(): QAItem[] {
-  if (typeof window === 'undefined') return []
+function loadFromLocalStorage(): QAItem[] | null {
+  if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw) as unknown
-      if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (x): x is QAItem =>
-            typeof x === 'object' &&
-            x !== null &&
-            'id' in x &&
-            'question' in x &&
-            'answer' in x &&
-            typeof (x as QAItem).id === 'string',
-        )
-      }
-    }
+    if (raw === null) return null
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return null
+    const rows = parsed.filter(isQAItem)
+    return rows.length ? rows : null
   } catch {
-    /* ignore corrupt storage */
+    return null
   }
-  return seedRows()
 }
 
 export function OpenQuestionsSheet() {
-  const [rows, setRows] = useState<QAItem[]>(loadInitial)
-  const [draftQuestion, setDraftQuestion] = useState('')
+  const [rows, setRows] = useState<QAItem[]>([])
+  const [ready, setReady] = useState(false)
+  const [persistFile, setPersistFile] = useState(false)
+  const [lastFileWrite, setLastFileWrite] = useState<string | null>(null)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const r = await fetch(OPEN_QUESTIONS_API)
+        if (!r.ok) throw new Error(String(r.status))
+        const data: unknown = await r.json()
+        const parsedRows = rowsFromOpenQuestionsFile(data)
+        if (parsedRows === null) throw new Error('bad shape')
+        if (cancelled) return
+        setRows(parsedRows)
+        if (
+          data &&
+          typeof data === 'object' &&
+          'updatedAt' in data &&
+          typeof (data as { updatedAt: unknown }).updatedAt === 'string'
+        ) {
+          setLastFileWrite((data as { updatedAt: string }).updatedAt)
+        }
+        setPersistFile(true)
+      } catch {
+        if (!cancelled) {
+          setRows(loadFromLocalStorage() ?? defaultSeedRows())
+          setPersistFile(false)
+        }
+      } finally {
+        if (!cancelled) setReady(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rows))
     } catch {
       /* quota / private mode */
     }
-  }, [rows])
+  }, [rows, ready])
+
+  useEffect(() => {
+    if (!ready || !persistFile) return
+    window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(() => {
+      ;(async () => {
+        try {
+          const r = await fetch(OPEN_QUESTIONS_API, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows }),
+          })
+          if (!r.ok) return
+          const data: unknown = await r.json()
+          if (
+            data &&
+            typeof data === 'object' &&
+            'updatedAt' in data &&
+            typeof (data as { updatedAt: unknown }).updatedAt === 'string'
+          ) {
+            setLastFileWrite((data as { updatedAt: string }).updatedAt)
+          }
+        } catch {
+          /* dev server stopped, offline */
+        }
+      })()
+    }, SAVE_DEBOUNCE_MS)
+    return () => window.clearTimeout(saveTimer.current)
+  }, [rows, ready, persistFile])
+
+  const [draftQuestion, setDraftQuestion] = useState('')
 
   const addRow = useCallback(() => {
     const q = draftQuestion.trim()
@@ -88,12 +130,38 @@ export function OpenQuestionsSheet() {
     setRows((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
+  if (!ready) {
+    return (
+      <div className="qs-sheet">
+        <p className="qs-lead qs-loading">Loading open questions…</p>
+      </div>
+    )
+  }
+
   return (
     <div className="qs-sheet">
       <p className="qs-lead">
-        Capture open decisions as a living sheet. Everything is stored in{' '}
-        <code className="qs-code">localStorage</code> on this browser ({STORAGE_KEY}).
+        {persistFile ? (
+          <>
+            With <code className="qs-code">npm run dev</code>, edits sync to{' '}
+            <code className="qs-code">data/open-questions.json</code> (commit that file to save in
+            git). A copy is also kept in <code className="qs-code">localStorage</code> (
+            {STORAGE_KEY}).
+          </>
+        ) : (
+          <>
+            Running without the dev file API (e.g. Netlify preview or{' '}
+            <code className="qs-code">vite preview</code>). Data is only in this browser —{' '}
+            <code className="qs-code">localStorage</code> ({STORAGE_KEY}).
+          </>
+        )}
       </p>
+      {persistFile && lastFileWrite && (
+        <p className="qs-file-meta">
+          Last written to disk:{' '}
+          <time dateTime={lastFileWrite}>{new Date(lastFileWrite).toLocaleString()}</time>
+        </p>
+      )}
 
       <div className="qs-toolbar">
         <div className="qs-add">
