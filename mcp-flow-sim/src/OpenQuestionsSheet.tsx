@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   OPEN_QUESTIONS_API,
+  OPEN_QUESTIONS_STATIC_PATH,
   defaultSeedRows,
   isQAItem,
   type QAItem,
@@ -24,15 +25,30 @@ function loadFromLocalStorage(): QAItem[] | null {
   }
 }
 
+/** Keep browser edits for matching row ids when refreshing from deployed JSON. */
+function mergeDeployedRowsWithLocal(stored: QAItem[], local: QAItem[] | null): QAItem[] {
+  if (!local?.length) return stored
+  const localById = new Map(local.map((r) => [r.id, r]))
+  const merged = stored.map((r) => {
+    const L = localById.get(r.id)
+    return L ? { ...r, question: L.question, answer: L.answer } : r
+  })
+  const storedIds = new Set(stored.map((r) => r.id))
+  const extras = local.filter((r) => !storedIds.has(r.id))
+  return [...merged, ...extras]
+}
+
 export function OpenQuestionsSheet() {
   const [rows, setRows] = useState<QAItem[]>([])
   const [ready, setReady] = useState(false)
   const [persistFile, setPersistFile] = useState(false)
+  const [source, setSource] = useState<'dev' | 'deploy' | 'local'>('local')
   const [lastFileWrite, setLastFileWrite] = useState<string | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     let cancelled = false
+
     ;(async () => {
       try {
         const r = await fetch(OPEN_QUESTIONS_API)
@@ -50,16 +66,40 @@ export function OpenQuestionsSheet() {
         ) {
           setLastFileWrite((data as { updatedAt: string }).updatedAt)
         }
+        setSource('dev')
         setPersistFile(true)
       } catch {
-        if (!cancelled) {
-          setRows(loadFromLocalStorage() ?? defaultSeedRows())
+        try {
+          const r = await fetch(OPEN_QUESTIONS_STATIC_PATH)
+          if (!r.ok) throw new Error(String(r.status))
+          const data: unknown = await r.json()
+          const parsedRows = rowsFromOpenQuestionsFile(data)
+          if (parsedRows === null) throw new Error('bad shape')
+          if (cancelled) return
+          setRows(mergeDeployedRowsWithLocal(parsedRows, loadFromLocalStorage()))
+          if (
+            data &&
+            typeof data === 'object' &&
+            'updatedAt' in data &&
+            typeof (data as { updatedAt: unknown }).updatedAt === 'string'
+          ) {
+            setLastFileWrite((data as { updatedAt: string }).updatedAt)
+          }
+          setSource('deploy')
           setPersistFile(false)
+        } catch {
+          if (!cancelled) {
+            setRows(loadFromLocalStorage() ?? defaultSeedRows())
+            setSource('local')
+            setPersistFile(false)
+            setLastFileWrite(null)
+          }
         }
       } finally {
         if (!cancelled) setReady(true)
       }
     })()
+
     return () => {
       cancelled = true
     }
@@ -141,24 +181,31 @@ export function OpenQuestionsSheet() {
   return (
     <div className="qs-sheet">
       <p className="qs-lead">
-        {persistFile ? (
+        {source === 'dev' ? (
           <>
             With <code className="qs-code">npm run dev</code>, edits sync to{' '}
             <code className="qs-code">data/open-questions.json</code> (commit that file to save in
             git). A copy is also kept in <code className="qs-code">localStorage</code> (
             {STORAGE_KEY}).
           </>
+        ) : source === 'deploy' ? (
+          <>
+            Question list is loaded from <code className="qs-code">open-questions.json</code> bundled
+            with this deploy (same content as <code className="qs-code">data/open-questions.json</code>{' '}
+            at build time). Your edits here stay in <code className="qs-code">localStorage</code> on
+            this browser; redeploy after you commit JSON changes to update the default list for
+            everyone.
+          </>
         ) : (
           <>
-            Running without the dev file API (e.g. Netlify preview or{' '}
-            <code className="qs-code">vite preview</code>). Data is only in this browser —{' '}
-            <code className="qs-code">localStorage</code> ({STORAGE_KEY}).
+            Could not load the deployed question file. Showing{' '}
+            <code className="qs-code">localStorage</code> ({STORAGE_KEY}) or built-in defaults.
           </>
         )}
       </p>
-      {persistFile && lastFileWrite && (
+      {(source === 'dev' || source === 'deploy') && lastFileWrite && (
         <p className="qs-file-meta">
-          Last written to disk:{' '}
+          {source === 'deploy' ? 'Snapshot ' : 'Last written to disk: '}
           <time dateTime={lastFileWrite}>{new Date(lastFileWrite).toLocaleString()}</time>
         </p>
       )}

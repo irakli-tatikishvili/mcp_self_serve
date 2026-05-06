@@ -28,14 +28,44 @@ function sendJson(res: ServerResponse, status: number, data: unknown) {
   res.end(JSON.stringify(data))
 }
 
+let buildOutDir = path.join(__dirname, 'dist')
+
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: 'open-questions-static-to-dist',
+      apply: 'build',
+      configResolved(config) {
+        const o = config.build.outDir
+        buildOutDir = path.isAbsolute(o) ? o : path.resolve(config.root, o)
+      },
+      closeBundle() {
+        fs.copyFileSync(
+          OPEN_QUESTIONS_PATH,
+          path.join(buildOutDir, 'open-questions.json'),
+        )
+      },
+    },
     {
       name: 'open-questions-file-api',
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
           const pathname = req.url?.split('?')[0] ?? ''
+
+          if (pathname === '/open-questions.json' && req.method === 'GET') {
+            try {
+              const raw = fs.readFileSync(OPEN_QUESTIONS_PATH, 'utf8')
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'application/json; charset=utf-8')
+              res.end(raw)
+              return
+            } catch {
+              next()
+              return
+            }
+          }
+
           if (pathname !== '/api/open-questions') {
             next()
             return

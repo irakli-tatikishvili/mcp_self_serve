@@ -16,6 +16,9 @@ export type OpenQuestionsJsonFile = {
 
 export const OPEN_QUESTIONS_API = '/api/open-questions' as const
 
+/** Bundled copy of `data/open-questions.json` at site root (production / Netlify). */
+export const OPEN_QUESTIONS_STATIC_PATH = '/open-questions.json' as const
+
 export function isQAItem(x: unknown): x is QAItem {
   return (
     typeof x === 'object' &&
