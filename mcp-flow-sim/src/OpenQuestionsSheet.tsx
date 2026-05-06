@@ -8,7 +8,7 @@ import {
   rowsFromOpenQuestionsFile,
 } from './openQuestionsStorage'
 
-const STORAGE_KEY = 'mcp-flow-sim-open-questions-v1'
+const STORAGE_KEY = 'mcp-flow-sim-open-questions-v2'
 const SAVE_DEBOUNCE_MS = 450
 
 function loadFromLocalStorage(): QAItem[] | null {
@@ -25,7 +25,15 @@ function loadFromLocalStorage(): QAItem[] | null {
   }
 }
 
-/** Keep browser edits for matching row ids when refreshing from deployed JSON. */
+/** Netlify SPA rewrite can accidentally return index.html — reject non-JSON bodies. */
+async function fetchStaticOpenQuestionsFile(): Promise<unknown> {
+  const r = await fetch(OPEN_QUESTIONS_STATIC_PATH, { cache: 'no-cache' })
+  if (!r.ok) throw new Error(String(r.status))
+  const text = await r.text()
+  const t = text.trimStart()
+  if (t.startsWith('<') || !t.startsWith('{')) throw new Error('not json')
+  return JSON.parse(text) as unknown
+}
 function mergeDeployedRowsWithLocal(stored: QAItem[], local: QAItem[] | null): QAItem[] {
   if (!local?.length) return stored
   const localById = new Map(local.map((r) => [r.id, r]))
@@ -70,9 +78,7 @@ export function OpenQuestionsSheet() {
         setPersistFile(true)
       } catch {
         try {
-          const r = await fetch(OPEN_QUESTIONS_STATIC_PATH)
-          if (!r.ok) throw new Error(String(r.status))
-          const data: unknown = await r.json()
+          const data = await fetchStaticOpenQuestionsFile()
           const parsedRows = rowsFromOpenQuestionsFile(data)
           if (parsedRows === null) throw new Error('bad shape')
           if (cancelled) return

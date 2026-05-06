@@ -12,3 +12,5 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  # Keep static files (e.g. /open-questions.json) when present — do not force SPA fallback
+  force = false
