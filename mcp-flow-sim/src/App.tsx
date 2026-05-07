@@ -62,7 +62,7 @@ export default function App() {
           <div className="doc-panel">
             <h2>Hypothesis &amp; approach</h2>
             <p>
-              Adding MCP (API key) to paid self-serve with a shared <strong>coin</strong> pool should lift CvR → new
+              Adding MCP (API key) to paid self-serve with a shared <strong>credit</strong> pool should lift CvR → new
               trials/NT via LLM funnels, improve retention &amp; TLV through embedded API usage, and fuel NT → T via
               credit exhaustion and visible usage.
             </p>
@@ -75,7 +75,7 @@ export default function App() {
               <ul>
                 <li>% of new NTs attributed to MCP / LLM funnel</li>
                 <li>API key generation (activation)</li>
-                <li>Coins consumed per NT; % hitting limits</li>
+                <li>Credits consumed per NT; % hitting limits</li>
                 <li>Add-on attach rate; retention API vs non-API</li>
               </ul>
             </div>
@@ -83,7 +83,7 @@ export default function App() {
               <h3>Product scope</h3>
               <ul>
                 <li>Keys, MCP auth, programmatic access</li>
-                <li>Monitor usage, coins, endpoints</li>
+                <li>Monitor usage, credits, endpoints</li>
                 <li>Manage keys, limits, allocations</li>
               </ul>
             </div>
@@ -91,7 +91,7 @@ export default function App() {
               <h3>Packaging principles</h3>
               <ul>
                 <li>MCP on all paid tiers; limited on no-CC trial</li>
-                <li>One coin system shared across tools</li>
+                <li>One credit balance shared across tools</li>
                 <li>Credit packs as primary expansion lever</li>
               </ul>
             </div>
@@ -101,13 +101,13 @@ export default function App() {
                 <li>Acquisition (LLM) → auth → signup/pay</li>
                 <li>Activation: first key + default allocation</li>
                 <li>Monitoring: REST + Data Credits pages</li>
-                <li>Exhaustion → buy coins / upgrade</li>
+                <li>Exhaustion → buy credits / upgrade</li>
               </ul>
             </div>
             <div className="doc-tile">
               <h3>Monetization</h3>
               <ul>
-                <li>Subscription base + coin add-ons</li>
+                <li>Subscription base + credit add-ons</li>
                 <li>Future: premium endpoints, rate tiers</li>
               </ul>
             </div>
@@ -115,7 +115,7 @@ export default function App() {
               <h3>Risks</h3>
               <ul>
                 <li>Abuse → rate limits, anomaly detection</li>
-                <li>Coin confusion → education &amp; UX clarity</li>
+                <li>Credit confusion → education &amp; UX clarity</li>
                 <li>Low activation → first-call onboarding</li>
                 <li>GTM cannibalization → positioning, packaging splits, funnel attribution</li>
               </ul>
@@ -126,7 +126,7 @@ export default function App() {
           <div className="doc-panel">
             <h2>Packaging vs programmatic access</h2>
             <p style={{ marginBottom: '0.75rem' }}>
-              Each row ties a commercial state to MCP eligibility and how coins show up in-product. Numbers here are
+              Each row ties a commercial state to MCP eligibility and how credits show up in-product. Numbers here are
               directional—replace with your final policy.
             </p>
             <div className="doc-table-wrap">
@@ -135,7 +135,7 @@ export default function App() {
                   <tr>
                     <th>Plan</th>
                     <th>MCP</th>
-                    <th>Coins</th>
+                    <th>Credits</th>
                     <th>Notes</th>
                   </tr>
                 </thead>

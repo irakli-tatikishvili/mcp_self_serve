@@ -225,7 +225,7 @@ export function OpenQuestionsSheet() {
             id="qs-new-q"
             className="qs-input qs-input-question"
             rows={2}
-            placeholder="e.g. What coin bundle ships with the $399 tier for CC trials?"
+            placeholder="e.g. What credit bundle ships with the $399 tier for CC trials?"
             value={draftQuestion}
             onChange={(e) => setDraftQuestion(e.target.value)}
             onKeyDown={(e) => {

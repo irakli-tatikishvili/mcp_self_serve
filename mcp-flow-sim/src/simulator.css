@@ -185,41 +185,210 @@
 
 .sim-pricing-row {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
+  align-items: stretch;
 }
 
 @media (min-width: 840px) {
   .sim-pricing-row {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
+/* Pricing tier cards — aligned light panels + blue API lists */
 .sim-plan {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
+  --pricing-blue: #3b66d4;
+  --pricing-panel-bg: #f8f9fb;
+  --pricing-panel-border: #e1e4e8;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pricing-panel-bg);
+  border: 1px solid var(--pricing-panel-border);
+  border-radius: 10px;
+  padding: 1.15rem 1.1rem 1.2rem;
   cursor: pointer;
   text-align: left;
-  color: inherit;
+  color: #0f172a;
+  box-shadow: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.sim-plan:hover {
+  border-color: #c5cad3;
 }
 
 .sim-plan.selected {
   border-color: var(--brand);
-  box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.25);
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
+}
+
+.sim-plan-summary {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--pricing-panel-border);
+}
+
+@media (min-width: 840px) {
+  .sim-plan-summary {
+    min-height: 11.75rem;
+  }
+}
+
+.sim-chip-plan {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.25rem 0.45rem;
+  border-radius: 4px;
+  background: #eef0f3;
+  border: 1px solid #e1e4e8;
+  color: #5c6370;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.sim-plan-title {
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.3;
+  margin: 0.5rem 0 0;
+  color: #0f172a;
 }
 
 .sim-plan .price {
   font-family: var(--font-sans);
   font-size: 1.75rem;
   font-weight: 700;
-  margin: 0.25rem 0;
+  margin: 0.35rem 0 0.2rem;
+  color: #0f172a;
 }
 
-.sim-plan .coins {
+.sim-plan .credits-line {
   font-size: 0.8rem;
-  color: var(--teal);
+  color: var(--pricing-blue);
   font-weight: 600;
+}
+
+p.sim-plan-tagline {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0.65rem 0 0;
+  line-height: 1.45;
+}
+
+.sim-plan-api {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 0.85rem;
+}
+
+.sim-plan-features-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ca3a8;
+  margin: 0 0 0.45rem;
+}
+
+.sim-plan-includes-intro {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.4rem;
+  line-height: 1.4;
+}
+
+.sim-plan-features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--pricing-blue);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.sim-plan-features li {
+  margin: 0.28rem 0;
+  padding-left: 0.95rem;
+  position: relative;
+}
+
+.sim-plan-features li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pricing-blue);
+}
+
+.sim-signup {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
+  max-width: 32rem;
+}
+
+.sim-signup label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.sim-signup input,
+.sim-signup select,
+.sim-signup textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.sim-signup textarea {
+  min-height: 3.5rem;
+  resize: vertical;
+}
+
+.sim-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--teal);
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+}
+
+.sim-link-btn:hover {
+  color: var(--brand);
+}
+
+.auth-alt-row {
+  margin-top: 0.65rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
 }
 
 .sim-llm-host {
@@ -534,7 +703,7 @@
   color: var(--muted);
 }
 
-.sim-pack-coins {
+.sim-pack-credits {
   font-family: var(--font-sans);
   font-size: 1.15rem;
   font-weight: 600;

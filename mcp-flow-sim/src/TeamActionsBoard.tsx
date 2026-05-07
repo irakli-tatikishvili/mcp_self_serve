@@ -17,17 +17,17 @@ const TEAM_LABELS: Record<TeamId, string> = {
 const DEFAULT_TEXT: Record<TeamId, string[]> = {
   pricing: [
     'Define MCP inclusion per tier and trial variants',
-    'Size base coin bundles vs. $199 / $399 / $649 SKUs',
+    'Size base credit bundles vs. $199 / $399 / $649 SKUs',
     'Define add-on packs & overage rules',
   ],
   platform: [
-    'Unify metering as one coin across REST, Batch, Studio, MCP',
+    'Unify metering as one credit pool across REST, Batch, Studio, MCP',
     'Deep-link Account Settings from checkout, trials, LLM auth',
-    'Ensure paid base includes MCP + upgrade path for coins',
+    'Ensure paid base includes MCP + upgrade path for credits',
   ],
   monetization: [
     'Paywalls & upgrade flows at 80% / 100% usage',
-    'Billing for coin packs; invoice reconciliation',
+    'Billing for credit packs; invoice reconciliation',
     'In-product + email + LLM-surface triggers',
   ],
   expansion: [
