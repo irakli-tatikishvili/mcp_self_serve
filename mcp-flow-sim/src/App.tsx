@@ -154,21 +154,15 @@ export default function App() {
                   </tr>
                   <tr>
                     <td>Trial (CC)</td>
-                    <td>Yes</td>
-                    <td>Medium</td>
-                    <td>Full MCP habit loop</td>
+                    <td>No</td>
+                    <td>None</td>
+                    <td>No MCP or credits until paid</td>
                   </tr>
                   <tr>
                     <td>Paid ($199+)</td>
                     <td>Yes</td>
-                    <td>Base +</td>
-                    <td>MCP listed as included</td>
-                  </tr>
-                  <tr>
-                    <td>Enterprise</td>
-                    <td>Yes</td>
-                    <td>Custom</td>
-                    <td>Negotiated pools</td>
+                    <td>By tier + data credits add-on</td>
+                    <td>MCP included; metering follows package + add-ons</td>
                   </tr>
                 </tbody>
               </table>
